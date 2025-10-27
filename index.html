@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>French Learning Games - Ontario Elementary</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="logo">French Learning Arcade</h1>
+                <div class="theme-toggle">
+                    <label class="theme-switch" for="theme-toggle">
+                        <input type="checkbox" id="theme-toggle" class="theme-input" />
+                        <span class="theme-slider">
+                            <span class="theme-icon sun">☀️</span>
+                            <span class="theme-icon moon">🌙</span>
+                        </span>
+                    </label>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="navigation">
+            <div class="nav-content">
+                <h2>Choose a Topic:</h2>
+                <div class="topic-buttons">
+                    <button class="topic-btn" data-topic="days">📅 Days of the Week</button>
+                    <button class="topic-btn" data-topic="months">📆 Months of the Year</button>
+                    <button class="topic-btn" data-topic="numbers1-10">🔢 Numbers 1-10</button>
+                    <button class="topic-btn" data-topic="numbers10-20">🔢 Numbers 10-20</button>
+                    <button class="topic-btn" data-topic="numbers20-30">🔢 Numbers 20-30</button>
+                    <button class="topic-btn" data-topic="numbers30-40">🔢 Numbers 30-40</button>
+                    <button class="topic-btn" data-topic="numbers40-50">🔢 Numbers 40-50</button>
+                    <button class="topic-btn" data-topic="numbers50-60">🔢 Numbers 50-60</button>
+                    <button class="topic-btn" data-topic="numbers60-70">🔢 Numbers 60-70</button>
+                    <button class="topic-btn" data-topic="numbers70-80">🔢 Numbers 70-80</button>
+                    <button class="topic-btn" data-topic="numbers80-90">🔢 Numbers 80-90</button>
+                    <button class="topic-btn" data-topic="numbers90-100">🔢 Numbers 90-100</button>
+                    <button class="topic-btn" data-topic="numbers1-100">🔢 Numbers 1-100</button>
+                    <button class="topic-btn" data-topic="colors">🎨 Colors</button>
+                    <button class="topic-btn" data-topic="seasons">🌺 Seasons</button>
+                    <button class="topic-btn" data-topic="clothing">👕 Clothing</button>
+                    <button class="topic-btn" data-topic="animals">🐶 Animals</button>
+                    <button class="topic-btn" data-topic="fruits">🍎 Fruits</button>
+                    <button class="topic-btn" data-topic="vegetables">🥬 Vegetables</button>
+                    <button class="topic-btn" data-topic="classroomobjects">🏫 Classroom Objects</button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Game Selection -->
+        <section class="game-selection">
+            <h2>Choose a Game:</h2>
+            <div class="game-buttons">
+                <button id="flashcards-btn" class="game-btn">🃏 Flashcards</button>
+                <button id="matching-btn" class="game-btn">🎯 Card Matching</button>
+                <button id="sortninja-btn" class="game-btn">🥷 Sort Ninja</button>
+            </div>
+        </section>
+
+        <!-- Game Area -->
+        <main class="game-area">
+            <div id="game-container" class="game-container">
+                <div class="welcome-message">
+                    <h2>Welcome to French Learning Games! 🎉</h2>
+                    <p>Select a topic and choose a game to start learning French!</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Made with ♥ in Kitchener, Ontario by <a href="https://solydtech.com" target="_blank"><b>SolydTech</b></a></p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
