@@ -71,6 +71,7 @@ body {
     box-shadow: 0 8px 32px var(--card-shadow);
     margin-bottom: 30px;
     padding: 20px;
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
 }
 
@@ -187,6 +188,7 @@ body {
     box-shadow: 0 8px 32px var(--card-shadow);
     margin-bottom: 30px;
     padding: 30px;
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
 }
 
@@ -234,6 +236,7 @@ body {
     box-shadow: 0 8px 32px var(--card-shadow);
     margin-bottom: 30px;
     padding: 30px;
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     text-align: center;
 }
@@ -281,6 +284,7 @@ body {
     border-radius: 20px;
     box-shadow: 0 8px 32px var(--card-shadow);
     padding: 30px;
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
     min-height: 400px;
 }
@@ -655,6 +659,7 @@ body {
     border: 3px solid transparent;
     font-weight: 600;
     font-size: 1rem;
+    -webkit-user-select: none;
     user-select: none;
 }
 
@@ -701,6 +706,99 @@ body {
     background: var(--bg-accent);
     transform: scale(1.05);
 }
+
+/* Hangman Styles */
+.hangman-area {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    align-items: center;
+}
+
+.hangman-stats {
+    display: flex;
+    gap: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.hangman-word {
+    display: flex;
+    gap: 8px;
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 4px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.hangman-letter {
+    display: inline-block;
+    min-width: 18px;
+    text-align: center;
+    padding: 6px 8px;
+    border-radius: 6px;
+    background: var(--bg-accent);
+    color: var(--text-primary);
+}
+
+.hangman-keyboard {
+    display: grid;
+    grid-template-columns: repeat(13, 1fr);
+    gap: 8px;
+    width: 100%;
+    max-width: 720px;
+}
+
+.hangman-key {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.hangman-key:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.hangman-controls {
+    display: flex;
+    gap: 12px;
+    margin-top: 6px;
+}
+
+.hangman-stats-and-drawing {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.hangman-drawing {
+    width: 220px;
+    height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hangman-svg {
+    width: 180px;
+    height: 220px;
+}
+
+.hang-part {
+    stroke: var(--text-primary);
+    stroke-width: 4;
+    fill: none;
+}
+
+/* hide all parts initially; JS will display them as wrong guesses accumulate */
+.hang-part { display: none; }
 
 /* Animations */
 @keyframes shrinkDisappear {

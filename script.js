@@ -14,6 +14,16 @@ class FrenchLearningGames {
         this.sortNinjaCards = [];
         this.draggedCard = null;
         
+    // Hangman game properties
+    this.hangmanCategory = null;
+    this.hangmanWord = '';
+    this.hangmanNormalized = '';
+    this.hangmanMasked = [];
+    this.hangmanGuessed = new Set();
+    this.hangmanWrongGuesses = [];
+    this.hangmanMaxWrong = 7;
+    this.hangmanKeyListener = null;
+        
         this.initializeEventListeners();
         this.initializeTheme();
     }
@@ -456,6 +466,10 @@ class FrenchLearningGames {
             this.selectGame('sortninja');
         });
 
+        document.getElementById('hangman-btn').addEventListener('click', () => {
+            this.selectGame('hangman');
+        });
+
         // Theme toggle
         document.getElementById('theme-toggle').addEventListener('change', () => {
             this.toggleTheme();
@@ -549,8 +563,8 @@ class FrenchLearningGames {
         });
         document.getElementById(`${game}-btn`).classList.add('active');
 
-        // Sort Ninja doesn't require a topic selection
-        if (game === 'sortninja') {
+        // Games that don't require a topic selection (Sort Ninja and Hangman)
+        if (game === 'sortninja' || game === 'hangman') {
             this.startGame();
         } else if (this.currentTopic) {
             // Other games require a topic to be selected
@@ -565,6 +579,10 @@ class FrenchLearningGames {
         // Sort Ninja doesn't require a topic
         if (this.currentGame === 'sortninja') {
             this.renderSortNinjaGame();
+            return;
+        }
+        if (this.currentGame === 'hangman') {
+            this.renderHangmanCategorySelection();
             return;
         }
         
@@ -1014,6 +1032,308 @@ class FrenchLearningGames {
         // Add reset button listener
         document.getElementById('reset-sortninja-btn').addEventListener('click', () => {
             this.resetSortNinjaGame();
+        });
+    }
+
+    // --- Hangman game methods ---
+    // Render the category selection UI for Hangman (exclude numbers)
+    renderHangmanCategorySelection() {
+        const gameContainer = document.getElementById('game-container');
+
+        // Get available categories (excluding numbers)
+        const availableCategories = Object.keys(this.gameData).filter(key =>
+            !key.startsWith('numbers')
+        );
+
+        gameContainer.innerHTML = `
+            <div class="game-header">
+                <h2>🔤 Hangman</h2>
+                <p>Select a category to play Hangman!</p>
+            </div>
+            <div class="category-selection">
+                <h3>Choose Category:</h3>
+                <div id="hangman-counter" class="category-counter">Selected: none</div>
+                <div class="category-checkboxes">
+                    ${availableCategories.map(category => `
+                        <label class="category-checkbox">
+                            <input type="radio" name="hangman-category" value="${category}" class="hangman-input">
+                            <span class="checkbox-label">${this.gameData[category].title}</span>
+                        </label>
+                    `).join('')}
+                </div>
+                <div class="tooltip-container">
+                    <button id="start-hangman-btn" class="start-sort-btn" disabled aria-disabled="true">Start Hangman</button>
+                    <span id="hangman-tooltip" class="tooltip-text">Please select a category</span>
+                </div>
+            </div>
+        `;
+
+        this.initializeHangmanSelection();
+    }
+
+    // Initialize hangman category selection UI
+    initializeHangmanSelection() {
+        const radios = document.querySelectorAll('.hangman-input');
+        const startBtn = document.getElementById('start-hangman-btn');
+        const counterEl = document.getElementById('hangman-counter');
+        const tooltipEl = document.getElementById('hangman-tooltip');
+
+        radios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                const selected = document.querySelector('.hangman-input:checked');
+                if (selected) {
+                    this.hangmanCategory = selected.value;
+                    counterEl.textContent = `Selected: ${this.gameData[this.hangmanCategory].title}`;
+                    startBtn.disabled = false;
+                    startBtn.setAttribute('aria-disabled', 'false');
+                    tooltipEl.textContent = 'Ready! Click to start Hangman.';
+                } else {
+                    this.hangmanCategory = null;
+                    counterEl.textContent = 'Selected: none';
+                    startBtn.disabled = true;
+                    startBtn.setAttribute('aria-disabled', 'true');
+                    tooltipEl.textContent = 'Please select a category';
+                }
+            });
+        });
+
+        startBtn.addEventListener('click', () => {
+            if (this.hangmanCategory) this.startHangmanGame();
+        });
+    }
+
+    // Start hangman by choosing a random word from selected category
+    startHangmanGame() {
+        const category = this.hangmanCategory;
+        if (!category) return;
+
+        const pairs = this.gameData[category].pairs;
+        // Choose a random pair
+        const pick = pairs[Math.floor(Math.random() * pairs.length)];
+        this.hangmanWord = pick.french;
+        this.hangmanHint = pick.english || '';
+        this.hangmanNormalized = this.normalizeString(this.hangmanWord).toUpperCase();
+        this.hangmanGuessed = new Set();
+        this.hangmanWrongGuesses = [];
+        this.hangmanMasked = this.createMaskedFromWord(this.hangmanWord);
+
+        this.renderHangmanPlay();
+    }
+
+    // Create masked representation of the word (array of {char, revealed})
+    createMaskedFromWord(word) {
+        // treat letters (including accented) as hidden; keep spaces and punctuation visible
+        const letters = Array.from(word);
+        return letters.map(ch => {
+            const isLetter = /[A-Za-zÀ-ÖØ-öø-ÿ]/.test(ch);
+            return { char: ch, revealed: !isLetter };
+        });
+    }
+
+    // Render the actual Hangman play UI
+    renderHangmanPlay() {
+        const gameContainer = document.getElementById('game-container');
+
+        gameContainer.innerHTML = `
+            <div class="game-header">
+                <h2>🔤 Hangman - ${this.gameData[this.hangmanCategory].title}</h2>
+                <p>Hint: <b>${this.hangmanHint}</b></p>
+            </div>
+            <div class="hangman-area">
+                <div class="hangman-stats-and-drawing">
+                    <div class="hangman-stats">
+                        <div>Wrong guesses: <span id="wrong-list">${this.hangmanWrongGuesses.join(', ')}</span></div>
+                        <div>Attempts left: <span id="attempts-left">${this.hangmanMaxWrong - this.hangmanWrongGuesses.length}</span></div>
+                    </div>
+                    <div class="hangman-drawing" aria-hidden="true">
+                        <!-- Inline SVG hangman with 7 parts (1..7) -->
+                        <svg id="hangman-svg" class="hangman-svg" viewBox="0 0 200 240" xmlns="http://www.w3.org/2000/svg">
+                            <!-- 1: base -->
+                            <g id="hang-part-1" class="hang-part">
+                                <line x1="10" y1="230" x2="190" y2="230" stroke-width="6" stroke-linecap="round" />
+                            </g>
+                            <!-- 2: pole -->
+                            <g id="hang-part-2" class="hang-part">
+                                <line x1="40" y1="230" x2="40" y2="20" stroke-width="6" stroke-linecap="round" />
+                            </g>
+                            <!-- 3: beam & rope -->
+                            <g id="hang-part-3" class="hang-part">
+                                <line x1="40" y1="20" x2="140" y2="20" stroke-width="6" stroke-linecap="round" />
+                                <line x1="140" y1="20" x2="140" y2="50" stroke-width="4" stroke-linecap="round" />
+                            </g>
+                            <!-- 4: head -->
+                            <g id="hang-part-4" class="hang-part">
+                                <circle cx="140" cy="70" r="18" stroke-width="4" fill="none" />
+                            </g>
+                            <!-- 5: body -->
+                            <g id="hang-part-5" class="hang-part">
+                                <line x1="140" y1="88" x2="140" y2="140" stroke-width="4" stroke-linecap="round" />
+                            </g>
+                            <!-- 6: arms -->
+                            <g id="hang-part-6" class="hang-part">
+                                <line x1="140" y1="100" x2="115" y2="120" stroke-width="4" stroke-linecap="round" />
+                                <line x1="140" y1="100" x2="165" y2="120" stroke-width="4" stroke-linecap="round" />
+                            </g>
+                            <!-- 7: legs -->
+                            <g id="hang-part-7" class="hang-part">
+                                <line x1="140" y1="140" x2="120" y2="180" stroke-width="4" stroke-linecap="round" />
+                                <line x1="140" y1="140" x2="160" y2="180" stroke-width="4" stroke-linecap="round" />
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+                <div id="hangman-word" class="hangman-word">
+                    ${this.hangmanMasked.map((m, i) => `<span class="hangman-letter" data-index="${i}">${m.revealed ? m.char : '_'}</span>`).join(' ')}
+                </div>
+                <div class="hangman-keyboard" id="hangman-keyboard">
+                    ${'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(l => `<button class="hangman-key" data-letter="${l}">${l}</button>`).join('')}
+                </div>
+                <div class="hangman-controls">
+                    <button id="hangman-reset-btn" class="reset-btn">🔄 Play Again (same category)</button>
+                    <button id="hangman-newcat-btn" class="reset-btn">🔁 Choose Different Category</button>
+                </div>
+            </div>
+        `;
+
+        // Keyboard listeners
+        document.querySelectorAll('.hangman-key').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const letter = e.currentTarget.dataset.letter;
+                this.handleLetterGuess(letter);
+            });
+        });
+
+        // physical keyboard support
+        this.hangmanKeyListener = (e) => {
+            const key = e.key.toUpperCase();
+            if (/^[A-Z]$/.test(key)) {
+                this.handleLetterGuess(key);
+            }
+        };
+        document.addEventListener('keydown', this.hangmanKeyListener);
+
+        // reset/different category buttons
+        document.getElementById('hangman-reset-btn').addEventListener('click', () => {
+            this.startHangmanGame();
+        });
+
+        document.getElementById('hangman-newcat-btn').addEventListener('click', () => {
+            // remove key listener
+            if (this.hangmanKeyListener) {
+                document.removeEventListener('keydown', this.hangmanKeyListener);
+                this.hangmanKeyListener = null;
+            }
+            this.renderHangmanCategorySelection();
+        });
+    }
+
+    // Normalize string by removing diacritics and trimming
+    normalizeString(str) {
+        return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    // Handle a guessed letter (A-Z)
+    handleLetterGuess(letter) {
+        if (!letter || typeof letter !== 'string') return;
+        letter = letter.toUpperCase();
+        if (this.hangmanGuessed.has(letter)) return; // already guessed
+
+        this.hangmanGuessed.add(letter);
+
+        // Check if normalized word contains letter
+        const target = this.hangmanNormalized; // already uppercase, no diacritics
+        if (target.includes(letter)) {
+            // reveal all matching positions
+            for (let i = 0; i < this.hangmanMasked.length; i++) {
+                const originalChar = this.hangmanMasked[i].char;
+                const normChar = this.normalizeString(originalChar).toUpperCase();
+                if (normChar === letter) {
+                    this.hangmanMasked[i].revealed = true;
+                }
+            }
+            this.updateHangmanDisplay();
+            // check win
+            if (this.hangmanMasked.every(m => m.revealed)) {
+                this.endHangman(true);
+            }
+        } else {
+            // wrong guess
+            this.hangmanWrongGuesses.push(letter);
+            this.updateHangmanDisplay();
+            if (this.hangmanWrongGuesses.length >= this.hangmanMaxWrong) {
+                this.endHangman(false);
+            }
+        }
+        // disable the pressed on-screen key
+        const keyBtn = document.querySelector(`.hangman-key[data-letter="${letter}"]`);
+        if (keyBtn) keyBtn.disabled = true;
+    }
+
+    // Update hangman UI elements
+    updateHangmanDisplay() {
+        // update word
+        const wordEl = document.getElementById('hangman-word');
+        if (wordEl) {
+            wordEl.innerHTML = this.hangmanMasked.map((m, i) => `<span class="hangman-letter" data-index="${i}">${m.revealed ? m.char : '_'}</span>`).join(' ');
+        }
+
+        // update wrong guesses and attempts
+        const wrongEl = document.getElementById('wrong-list');
+        const attemptsEl = document.getElementById('attempts-left');
+        if (wrongEl) wrongEl.textContent = this.hangmanWrongGuesses.join(', ');
+        if (attemptsEl) attemptsEl.textContent = String(this.hangmanMaxWrong - this.hangmanWrongGuesses.length);
+
+        // Update SVG hangman parts visibility according to wrong guesses
+        for (let i = 1; i <= this.hangmanMaxWrong; i++) {
+            const part = document.getElementById(`hang-part-${i}`);
+            if (!part) continue;
+            if (i <= this.hangmanWrongGuesses.length) {
+                part.style.display = 'block';
+            } else {
+                part.style.display = 'none';
+            }
+        }
+    }
+
+    // End hangman - show win/lose and reveal word (if lost)
+    endHangman(won) {
+        // remove key listener
+        if (this.hangmanKeyListener) {
+            document.removeEventListener('keydown', this.hangmanKeyListener);
+            this.hangmanKeyListener = null;
+        }
+
+        const gameContainer = document.getElementById('game-container');
+        if (won) {
+            gameContainer.innerHTML = `
+                <div class="game-complete">
+                    <h2>🎉 You Win! 🎉</h2>
+                    <p>Great job! The word was: <b>${this.hangmanWord}</b></p>
+                    <div class="game-controls">
+                        <button id="hangman-playagain" class="play-again-btn">Play Again (same category)</button>
+                        <button id="hangman-newcat" class="reset-btn">Choose Different Category</button>
+                    </div>
+                </div>
+            `;
+        } else {
+            gameContainer.innerHTML = `
+                <div class="game-complete">
+                    <h2>☠️ Game Over</h2>
+                    <p>The word was: <b>${this.hangmanWord}</b></p>
+                    <div class="game-controls">
+                        <button id="hangman-playagain" class="play-again-btn">Try Again (same category)</button>
+                        <button id="hangman-newcat" class="reset-btn">Choose Different Category</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // wire buttons
+        document.getElementById('hangman-playagain').addEventListener('click', () => {
+            this.startHangmanGame();
+        });
+        document.getElementById('hangman-newcat').addEventListener('click', () => {
+            this.renderHangmanCategorySelection();
         });
     }
 
