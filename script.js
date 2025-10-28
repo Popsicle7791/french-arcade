@@ -1137,7 +1137,11 @@ class FrenchLearningGames {
         gameContainer.innerHTML = `
             <div class="game-header">
                 <h2>🔤 Hangman - ${this.gameData[this.hangmanCategory].title}</h2>
-                <p>Hint: <b>${this.hangmanHint}</b></p>
+                <div class="hint-area">
+                    <button id="show-hint-btn" class="hint-btn">💡 Show Hint</button>
+                    <!-- Use the boolean hidden attribute as a robust default so the hint stays hidden even if CSS isn't applied -->
+                    <p id="hint-text" class="hint-text hidden" hidden>Hint: <b>${this.hangmanHint}</b></p>
+                </div>
             </div>
             <div class="hangman-area">
                 <div class="hangman-stats-and-drawing">
@@ -1186,7 +1190,15 @@ class FrenchLearningGames {
                     ${this.hangmanMasked.map((m, i) => `<span class="hangman-letter" data-index="${i}">${m.revealed ? m.char : '_'}</span>`).join(' ')}
                 </div>
                 <div class="hangman-keyboard" id="hangman-keyboard">
-                    ${'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(l => `<button class="hangman-key" data-letter="${l}">${l}</button>`).join('')}
+                    ${[
+                        'ABCDEFGHIJ'.split(''),
+                        'KLMNOPQRST'.split(''),
+                        'UVWXYZ'.split('')
+                    ].map(row => 
+                        `<div class="hangman-row">
+                            ${row.map(l => `<button class="hangman-key" data-letter="${l}">${l}</button>`).join('')}
+                        </div>`
+                    ).join('')}
                 </div>
                 <div class="hangman-controls">
                     <button id="hangman-reset-btn" class="reset-btn">🔄 Play Again (same category)</button>
@@ -1194,6 +1206,20 @@ class FrenchLearningGames {
                 </div>
             </div>
         `;
+
+        // Wire hint button (use class toggling only so deployment sanitizers/CSP won't interfere)
+        document.getElementById('show-hint-btn').addEventListener('click', () => {
+            const hintText = document.getElementById('hint-text');
+            const hintBtn = document.getElementById('show-hint-btn');
+            if (hintText && hintBtn) {
+                hintText.classList.remove('hidden');
+                // remove the boolean hidden attribute so the element is available to screen readers and layout
+                hintText.removeAttribute('hidden');
+                // no inline styles here; CSS handles visibility via the .hidden class
+                hintBtn.disabled = true;
+                hintBtn.textContent = '💡 Hint Shown';
+            }
+        });
 
         // Keyboard listeners
         document.querySelectorAll('.hangman-key').forEach(btn => {
@@ -1225,6 +1251,23 @@ class FrenchLearningGames {
             }
             this.renderHangmanCategorySelection();
         });
+
+        // Diagnostic: log quick status so we can see if CSS rules are being applied on deployed sites
+        try {
+            const cssStatus = {
+                stylesLoaded: !!document.querySelector('link[href$="styles.css"]'),
+                hintHasHiddenClass: !!document.getElementById('hint-text')?.classList.contains('hidden'),
+                sampleHangPartExists: !!document.getElementById('hang-part-1')
+            };
+            console.info('Hangman diagnostics:', cssStatus);
+            if (cssStatus.sampleHangPartExists) {
+                const part = document.getElementById('hang-part-1');
+                console.info('hang-part-1 computed display:', window.getComputedStyle(part).display);
+            }
+        } catch (e) {
+            // non-fatal
+            console.warn('Hangman diagnostics failed', e);
+        }
     }
 
     // Normalize string by removing diacritics and trimming
@@ -1288,9 +1331,25 @@ class FrenchLearningGames {
             const part = document.getElementById(`hang-part-${i}`);
             if (!part) continue;
             if (i <= this.hangmanWrongGuesses.length) {
-                part.style.display = 'block';
+                part.classList.add('visible');
+                part.setAttribute('aria-hidden', 'false');
             } else {
-                part.style.display = 'none';
+                part.classList.remove('visible');
+                part.setAttribute('aria-hidden', 'true');
+            }
+
+            // Fallback: some deployed environments alter or omit CSS. If the computed style
+            // still reports 'none' after toggling the class, apply an inline style fallback.
+            // We avoid !important here to stay compatible with CSPs that block unsafe-inline
+            const computed = window.getComputedStyle(part);
+            if (i <= this.hangmanWrongGuesses.length) {
+                if (computed.display === 'none') {
+                    part.style.display = 'block';
+                }
+            } else {
+                if (computed.display !== 'none') {
+                    part.style.display = 'none';
+                }
             }
         }
     }

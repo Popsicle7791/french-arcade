@@ -744,19 +744,37 @@ body {
 
 .hangman-keyboard {
     display: grid;
-    grid-template-columns: repeat(13, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(35px, 1fr));
     gap: 8px;
     width: 100%;
     max-width: 720px;
+    margin: 20px auto;
+    padding: 10px;
+    background: var(--bg-accent);
+    border-radius: 15px;
+    justify-content: center;
 }
 
 .hangman-key {
     background: var(--card-bg);
     border: 2px solid var(--border-color);
-    padding: 8px 10px;
+    padding: 12px;
     border-radius: 8px;
     font-weight: 700;
     cursor: pointer;
+    font-size: 1.2rem;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.hangman-key:hover:not(:disabled) {
+    transform: translateY(-2px);
+    background: var(--accent-color);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .hangman-key:disabled {
@@ -778,6 +796,64 @@ body {
     flex-wrap: wrap;
 }
 
+.hint-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin: 12px 0;
+}
+
+.hint-btn {
+    background: linear-gradient(45deg, var(--color-blue), var(--color-cyan));
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Fredoka', cursive;
+}
+
+.hint-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.hint-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    background: linear-gradient(45deg, var(--color-green), var(--color-cyan));
+}
+
+.hint-text {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    margin: 0;
+    opacity: 1;
+    transform: translateY(0);
+    transition: all 0.3s ease-in-out;
+    /* Keep hint in the normal document flow to avoid layout shifts on some servers/browsers */
+    position: static;
+    display: block;
+    background: var(--bg-accent);
+    padding: 8px 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 1;
+}
+
+.hint-text.hidden {
+    opacity: 0;
+    transform: translateY(-10px);
+    height: 0;
+    margin: 0;
+    pointer-events: none;
+    display: none !important;
+}
+
 .hangman-drawing {
     width: 220px;
     height: 260px;
@@ -795,10 +871,22 @@ body {
     stroke: var(--text-primary);
     stroke-width: 4;
     fill: none;
+    /* hide parts by default */
+    display: none;
 }
 
-/* hide all parts initially; JS will display them as wrong guesses accumulate */
-.hang-part { display: none; }
+/* When JS marks a part visible, use this class rather than inline !important styles */
+.hang-part.visible {
+    display: block;
+}
+
+/* Row helper for keyboard rows (avoid inline styles in generated HTML) */
+.hangman-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(35px, 1fr));
+    gap: 8px;
+    width: 100%;
+}
 
 /* Animations */
 @keyframes shrinkDisappear {
